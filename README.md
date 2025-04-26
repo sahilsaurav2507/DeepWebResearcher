@@ -1,40 +1,131 @@
 # DeepWebResearcher
 
-DeepWebResearcher is an advanced research engine that automates comprehensive web research, fact-checking, and content creation using AI agents and LLM models.
+DeepWebResearcher is an advanced AI agent-based research engine that automates comprehensive web research, fact-checking, and content creation using a multi-agent system built on LangGraph and LangChain.
+
+## Problem Statement
+
+This project addresses the need for an AI agent-based Deep Research system that:
+1. Crawls websites using Tavily for online information gathering
+2. Implements a multi-agent system with specialized roles:
+   - Research agent for data collection and analysis
+   - Fact-checking agent for verification
+   - Content drafting agent for final output creation
+3. Utilizes LangGraph & LangChain frameworks to effectively organize the gathered information
+4. Produces well-structured, verified research content
 
 ## Overview
 
-This tool helps users conduct deep research on any topic by:
-1. Optimizing search queries
-2. Gathering comprehensive information from reliable sources
-3. Extracting and verifying key claims
-4. Generating well-structured content in various formats
+DeepWebResearcher helps users conduct deep research on any topic through a coordinated multi-agent system that:
+1. Optimizes search queries for better information retrieval
+2. Gathers comprehensive information from reliable sources across the web
+3. Extracts and verifies key claims against trusted sources
+4. Generates well-structured content in various formats based on verified research
 
 ## Architecture
 
-### Core Components
+### Multi-Agent System
 
-1. **Research Agent**: Optimizes queries and gathers information from the web
-2. **Fact-Checking Agent**: Verifies claims against trusted sources
-3. **Content Generation Agent**: Creates polished drafts in various styles
-4. **Workflow Orchestration**: Manages the research pipeline using LangGraph
+The solution implements a multi-agent architecture where specialized agents work together in a coordinated workflow:
+
+1. **Research Agent**: 
+   - Optimizes user queries for better search results
+   - Crawls the web using Tavily Search API
+   - Gathers and synthesizes information from multiple sources
+   - Produces structured research output
+
+2. **Fact-Checking Agent**:
+   - Extracts key claims from research
+   - Verifies each claim against trusted sources
+   - Evaluates accuracy, identifies inaccuracies, and provides context
+   - Generates comprehensive fact-check reports
+
+3. **Content Drafting Agent**:
+   - Takes verified research and fact-check reports
+   - Adapts content to user-selected style (blog post, report, executive summary)
+   - Creates polished, well-structured content with proper citations
+   - Ensures factual accuracy based on verification results
 
 ### Technology Stack
 
-- **LLM Models**: Groq's deepseek-r1-distill-llama-70b
-- **Search API**: Tavily Search API for web research and fact verification
-- **Workflow Management**: LangGraph for agent orchestration
+- **LLM Models**: Groq's deepseek-r1-distill-llama-70b powers all agents
+- **Web Crawling**: Tavily Search API for information gathering and verification
+- **Agent Orchestration**: LangGraph for workflow management and agent coordination
+- **LLM Interaction**: LangChain for prompting, parsing, and tool integration
 - **Frontend**: Gradio for the user interface
-- **Backend**: Python with LangChain for LLM interactions
+- **Backend**: Python with state management through LangGraph
 
-## Workflow Process
+## LangGraph Agent Workflow
 
-### 1. Query Optimization
-The system takes a user query and transforms it into a more specific, detailed search query using the LLM.
+The system uses LangGraph to create a directed graph of agent interactions, where each node represents an agent performing a specific task:
+
+```
+optimize_query → conduct_research → extract_key_claims → verify_claims → generate_fact_check_report → create_draft_content → END
+```
+
+### State Management
+
+LangGraph manages a shared state object (`ResearchState`) that tracks all information throughout the research process:
 
 ```python
+class ResearchState(TypedDict):
+    query: str
+    optimized_query: str
+    research_output: str
+    claims: List[Dict[str, Any]]
+    verification_results: List[Dict[str, Any]]
+    references: List[str]
+    fact_check_report: str
+    content_style: str
+    draft_content: str
+    status: str
+```
+
+This state is passed between agents, allowing each to:
+1. Access outputs from previous agents
+2. Contribute their own results
+3. Maintain the complete research context
+
+### Agent Implementation with LangChain
+
+Each agent is implemented using LangChain components:
+
+1. **Prompt Templates**: Define the agent's task and expected output format
+2. **LLM Integration**: Connect to the Groq API for reasoning and generation
+3. **Output Parsers**: Structure LLM outputs into usable formats (JSON, text)
+4. **Tool Integration**: Connect to external services like Tavily Search
+
+For example, the Research Agent uses this pattern:
+```python
+research_prompt = ChatPromptTemplate.from_template("""
+You are a thorough research assistant. Your task is to provide comprehensive information about the following query:
+
+{query}
+
+Please conduct detailed research and provide a well-structured response that:
+1. Covers all important aspects of the topic
+2. Includes relevant facts, data, and context
+3. Presents different perspectives when applicable
+4. Cites sources where appropriate
+
+Your response should be thorough, accurate, and well-organized.
+""")
+
+chain = research_prompt | research_llm | StrOutputParser()
+research_output = chain.invoke({"query": optimized_query})
+```
+
+## Detailed Agent Capabilities
+
+### 1. Research Agent
+
+**Web Crawling and Information Gathering**:
+- Uses Tavily Search API to crawl relevant websites based on optimized queries
+- Retrieves comprehensive information from multiple sources
+- Handles different types of content (articles, reports, data)
+
+**Query Optimization**:
+```python
 def optimize_query_directly(query: str) -> str:
-    """Optimize a query directly using the LLM"""
     optimization_prompt = ChatPromptTemplate.from_template("""
     You are a query optimization expert. Your task is to transform natural language queries into 
     detailed, domain-specific optimized queries that can be processed by specialized systems.
@@ -54,24 +145,26 @@ def optimize_query_directly(query: str) -> str:
     return chain.invoke({"query": query})
 ```
 
-### 2. Research Gathering
-Using the Tavily Search API, the system gathers relevant information from the web and summarizes it into a structured research output.
-
+**Information Synthesis**:
 ```python
-def conduct_research(state: ResearchState) -> ResearchState:
-    """Conduct research based on the optimized query"""
-    # Search for information using Tavily
-    search_results = tavily_search.invoke(state["optimized_query"])
+def summarize_search_results(query: str, search_results: List[Dict[str, Any]]) -> str:
+    """Summarize and structure search results using LLM"""
+    # Format search results 
+    formatted_results = "\n\n".join([
+        f"Source: {result.get('url', 'Unknown')}\n"
+        f"Title: {result.get('title', 'No title')}\n"
+        f"Content: {result.get('content', 'No content')}"
+        for result in search_results
+    ])
     
-    # Summarize the search results
-    research_output = summarize_search_results(state["optimized_query"], search_results)
-    
-    return {"research_output": research_output}
+    #  summarization chain
+    chain = summarize_prompt | research_llm | StrOutputParser()
+    return chain.invoke({"query": query, "search_results": formatted_results})
 ```
 
-### 3. Claim Extraction
-The system identifies 3-5 key factual claims from the research output that need verification.
+### 2. Fact-Checking Agent
 
+**Claim Extraction**:
 ```python
 def extract_claims(research_output):
     """Extract key factual claims from research output"""
@@ -93,51 +186,67 @@ def extract_claims(research_output):
     return chain.invoke({"research_output": research_output})
 ```
 
-### 4. Fact Checking
-Each claim is verified against trusted sources using a separate search and analysis process.
-
+**Claim Verification**:
 ```python
 def verify_claim(claim):
     """Verify a single claim using search and LLM analysis"""
-    # Search for verification information
     search_results = fact_verification_search.invoke(claim)
-    
-    # Format verification data
+
     verification_data = "\n\n".join([
         f"Source: {result.get('url', 'Unknown')}\n"
         f"Title: {result.get('title', 'No title')}\n"
         f"Content: {result.get('content', 'No content')}"
         for result in search_results
     ])
-    
-    # Run credibility check
+
     chain = credibility_check_prompt | fact_checker_llm | JsonOutputParser()
     return chain.invoke({"claim": claim, "verification_data": verification_data})
 ```
 
-### 5. Fact-Check Report Generation
-The system compiles a comprehensive fact-check report based on the verification results.
-
+**Reference Extraction**:
 ```python
-def generate_fact_check_report(state: ResearchState) -> ResearchState:
-    """Generate a comprehensive fact-check report"""
-    # Generate report using LLM
-    chain = overall_report_prompt | fact_checker_llm | StrOutputParser()
-    fact_check_report = chain.invoke({
-        "research_output": state["research_output"],
-        "verification_results": json.dumps(clean_verification_results, indent=2),
-        "references": "\n".join(state["references"])
-    })
-    
-    return {"fact_check_report": fact_check_report}
+def extract_references(verification_results):
+    references = []
+    for i, result in enumerate(verification_results, 1):
+        verification_data = result.get("verification_data", "")
+        sources = re.findall(r"Source: (https?://[^\n]+)", verification_data)
+        for source in sources:
+            if source not in [ref.split(". ")[1] for ref in references]:
+                references.append(f"{len(references) + 1}. {source}")
+    return references
 ```
 
-### 6. Content Creation
-Finally, the system generates a polished content draft in the user's chosen style (blog post, detailed report, or executive summary).
+### 3. Content Drafting Agent
 
+**Style Selection**:
+```python
+def select_content_style(style_number: int) -> str:
+    styles = {1: "blog post", 2: "detailed report", 3: "executive summary"}
+    return styles.get(style_number, "blog post")  # Default to blog post if invalid number
+
+def get_style_prompt(style: str) -> str:
+    if style == "blog post":
+        return "Create an engaging blog post that presents the research findings in a conversational tone with clear headings, examples, and actionable insights."
+    elif style == "detailed report":
+        return "Structure a comprehensive report with executive summary, methodology, findings, analysis, and recommendations. Include relevant data points and cite sources appropriately."
+    elif style == "executive summary":
+        return "Provide a concise executive summary highlighting key findings, implications, and recommended actions. Focus on business impact and strategic considerations."
+```
+
+**Content Creation**:
 ```python
 def create_draft_content(state: ResearchState) -> ResearchState:
-    """Draft content in the specified style"""
+    draft_prompt = ChatPromptTemplate.from_template("""
+    Based on the following research results, create a {style} content where you will draft info only about the query {optimized_query} and the research findings. Not about the process like fact checking query optimization just use the Research findings:
+    {research} and Fact-check report:
+    {fact_check} to generate this {style} based draft having the References:
+    {references} at the end of the draft
+    The content should be informative, engaging, and suitable for the target audience.
+    
+    Please structure the draft in a clear, engaging {style} format.
+    Do not include any <think> or </think> tags in your response.
+    """)
+    
     chain = draft_prompt | research_llm | StrOutputParser()
     draft_content = chain.invoke({
         "optimized_query": state["optimized_query"],
@@ -153,6 +262,41 @@ def create_draft_content(state: ResearchState) -> ResearchState:
     }
 ```
 
+## LangGraph Workflow Implementation
+
+The entire multi-agent system is orchestrated through LangGraph:
+
+```python
+def create_research_workflow():
+    # Initialize the graph
+    workflow = StateGraph(ResearchState)
+    
+    # Add nodes (each representing an agent)
+    workflow.add_node("optimize_query", optimize_query)
+    workflow.add_node("conduct_research", conduct_research)
+    workflow.add_node("extract_key_claims", extract_key_claims)
+    workflow.add_node("verify_claims", verify_claims)
+    workflow.add_node("generate_fact_check_report", generate_fact_check_report)
+    workflow.add_node("create_draft_content", create_draft_content)
+    
+    # Define edges (agent interaction flow)
+    workflow.set_entry_point("optimize_query")
+    workflow.add_edge("optimize_query", "conduct_research")
+    workflow.add_edge("conduct_research", "extract_key_claims")
+    workflow.add_edge("extract_key_claims", "verify_claims")
+    workflow.add_edge("verify_claims", "generate_fact_check_report")
+    workflow.add_edge("generate_fact_check_report", "create_draft_content")
+    workflow.add_edge("create_draft_content", END)
+    
+    return workflow.compile()
+```
+
+This graph structure:
+- Defines each agent as a node
+- Establishes the sequence of agent interactions
+- Manages the flow of information between agents
+- Tracks the complete state throughout the process
+
 ## User Interface
 
 The system provides a Gradio-based web interface that allows users to:
@@ -163,34 +307,6 @@ The system provides a Gradio-based web interface that allows users to:
    - Fact-Check Report
    - Research work (Final Content)
    - Drafted information (References)
-
-## API Usage
-
-### Groq API
-- Used for accessing the deepseek-r1-distill-llama-70b LLM model
-- Handles query optimization, research summarization, claim extraction, fact-checking, and content generation
-
-### Tavily Search API
-- Provides web search capabilities for research gathering
-- Used for fact verification with specialized search parameters
-- Configured with different search depths based on the task
-
-## Libraries Used
-
-### LangChain
-- `langchain_groq`: Interface to Groq's LLM models
-- `langchain_core`: Core components for prompts and output parsing
-- `langchain.tools`: Integration with external tools like Tavily Search
-
-### LangGraph
-- Used for creating and managing the research workflow
-- Handles state management between different research stages
-- Provides a directed graph structure for the research pipeline
-
-### Gradio
-- Creates the web-based user interface
-- Handles user inputs and displays research outputs
-- Organizes results in a tabbed interface for better user experience
 
 ## Output Formats
 
