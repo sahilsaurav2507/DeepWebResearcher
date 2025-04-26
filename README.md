@@ -22,6 +22,8 @@ DeepWebResearcher helps users conduct deep research on any topic through a coord
 4. Generates well-structured content in various formats based on verified research
 
 ## Architecture
+![Editor___Mermaid_Chart-2025-04-26-142941 1](https://github.com/user-attachments/assets/35f81358-1a32-4b1c-b9c9-fd9585db7978)
+
 
 ### Multi-Agent System
 
