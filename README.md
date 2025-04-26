@@ -329,18 +329,38 @@ A polished document in the user's chosen style:
 
 ## Setup and Usage
 
+### Installing Dependencies
+
+1. Clone the repository:
+```bash
+git clone https://github.com/sahilsaurav2507/DeepWebResearcher.git
+cd DeepWebResearcher
+```
+
+2. Install required packages:
+```bash
+pip install -r requirements.txt
+```
+
+3. Create a `.env` file in the project root with your API keys:
+```
+GROQ_API_KEY=your_groq_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+```
+
 ### Environment Variables
 The system requires the following API keys:
 - `GROQ_API_KEY`: For accessing Groq's LLM models
 - `TAVILY_API_KEY`: For web search capabilities
 
 ### Running the Application
-1. Install the required dependencies
-2. Set up the environment variables
-3. Run the Gradio interface:
+Run the Gradio interface:
 ```bash
 python gradio_interface.py
 ```
+
+The web interface will be available at http://127.0.0.1:7860 by default.
+
 
 ## Limitations and Considerations
 - The quality of research depends on the availability of information through the Tavily Search API
