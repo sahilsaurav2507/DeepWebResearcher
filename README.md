@@ -303,12 +303,16 @@ This graph structure:
 
 The system provides a Gradio-based web interface that allows users to:
 1. Enter a research query
-2. Select a content style (Blog post, Detailed report, or Executive summary)
-3. View the research results in multiple tabs:
+![Screenshot_2025-04-26_170229 2](https://github.com/user-attachments/assets/5fe3130d-222e-43db-9e42-754950d90a83)
+
+3. Select a content style (Blog post, Detailed report, or Executive summary)
+4. View the research results in multiple tabs:
    - Query Information
    - Fact-Check Report
    - Research work (Final Content)
    - Drafted information (References)
+
+![Screenshot_2025-04-26_170336 2](https://github.com/user-attachments/assets/fac96320-ac65-468c-98b9-7b3384d45d05)
 
 ## Output Formats
 
@@ -322,6 +326,7 @@ A detailed analysis of key claims, including:
 - Context for misleading information
 - Suggested improvements
 - References to verification sources
+
 
 ### Content Draft
 A polished document in the user's chosen style:
