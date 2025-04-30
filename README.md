@@ -20,6 +20,7 @@ DeepWebResearcher helps users conduct deep research on any topic through a coord
 2. Gathers comprehensive information from reliable sources across the web
 3. Extracts and verifies key claims against trusted sources
 4. Generates well-structured content in various formats based on verified research
+5. Supports ingestion of PDF attachments and leverages Retrieval-Augmented Generation (RAG) to incorporate and retrieve information from uploaded PDF documents
 
 ## Architecture
 ![Editor___Mermaid_Chart-2025-04-26-142941 1](https://github.com/user-attachments/assets/35f81358-1a32-4b1c-b9c9-fd9585db7978)
