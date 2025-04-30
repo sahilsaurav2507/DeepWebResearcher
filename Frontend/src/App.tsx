@@ -114,28 +114,35 @@ const ChatDemo = () => {
     // Handle editor routes with research ID
     if (paths[1] === 'editor' && paths[2] === 'research' && paths[3]) {
       const researchId = paths[3];
+      console.log('Detected research page with ID:', researchId);
       
-      // Only update if the research ID has changed
-      if (activeResearchId !== researchId) {
-        // Check if we have the result in localStorage
-        const storedResult = localStorage.getItem(`research_${researchId}`);
-        if (storedResult) {
-          try {
-            const parsedResult = JSON.parse(storedResult);
-            setSelectedItem(parsedResult);
-            setIsLoading(false);
-            setActiveResearchId(researchId);
-          } catch (error) {
-            console.error('Error parsing stored research result:', error);
-            // Fall back to polling
-            setActiveResearchId(researchId);
-            return pollResearchResults(researchId);
-          }
-        } else {
-          // If not in localStorage, start polling
+      // Check if we already have this research loaded
+      if (selectedItem?.researchId === researchId) {
+        console.log('Research already loaded in state:', researchId);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if we have the result in localStorage
+      const storedResult = localStorage.getItem(`research_${researchId}`);
+      if (storedResult) {
+        try {
+          console.log('Found research in localStorage:', researchId);
+          const parsedResult = JSON.parse(storedResult);
+          setSelectedItem(parsedResult);
+          setIsLoading(false);
+          setActiveResearchId(researchId);
+        } catch (error) {
+          console.error('Error parsing stored research result:', error);
+          // Fall back to polling
           setActiveResearchId(researchId);
           return pollResearchResults(researchId);
         }
+      } else {
+        console.log('Starting polling for research:', researchId);
+        // If not in localStorage, start polling
+        setActiveResearchId(researchId);
+        return pollResearchResults(researchId);
       }
     } else {
       // Clear active research ID when not on a research page
@@ -249,6 +256,40 @@ const ChatDemo = () => {
           });
         }, 3 * 60 * 1000); // 3 minutes
         
+        // First, check if the research is already completed
+        try {
+          const initialCheck = await getResearchResults(researchId);
+          console.log(`Initial research status check: ${initialCheck.status}`, initialCheck);
+          
+          if (initialCheck.status === 'completed') {
+            // Research is already completed, no need to poll
+            console.log('Research already completed, loading results');
+            
+            // Create a library item from the research results
+            const newItem: LibraryItem = {
+              id: `temp-${researchId}`,
+              title: initialCheck.query.original.split('\n')[0].substring(0, 50) + (initialCheck.query.original.length > 50 ? '...' : ''),
+              category: mapContentStyleToCategory(initialCheck.content.style),
+              content: initialCheck.content.draft,
+              timestamp: Date.now(),
+              references: initialCheck.references,
+              researchId: researchId
+            };
+            
+            // Store the result in localStorage
+            localStorage.setItem(`research_${researchId}`, JSON.stringify(newItem));
+            
+            setSelectedItem(newItem);
+            setIsLoading(false);
+            
+            // No need to set up polling
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking initial research status:', error);
+          // Continue with polling
+        }
+        
         // Poll until research is complete
         pollInterval = setInterval(async () => {
           try {
@@ -257,54 +298,77 @@ const ChatDemo = () => {
             console.log(`Research status: ${result.status}`, result);
             
             if (result.status === 'completed') {
+              console.log('Research completed, clearing intervals and updating state');
+              
+              // Clear intervals immediately
               clearInterval(pollInterval);
               clearTimeout(pollTimeout);
               
               // Create a library item from the research results
               const newItem: LibraryItem = {
-                id: `temp-${researchId}`, // Temporary ID until saved
+                id: `temp-${researchId}`,
                 title: result.query.original.split('\n')[0].substring(0, 50) + (result.query.original.length > 50 ? '...' : ''),
                 category: mapContentStyleToCategory(result.content.style),
                 content: result.content.draft,
                 timestamp: Date.now(),
                 references: result.references,
-                researchId: researchId // Store the research ID for saving later
+                researchId: researchId
               };
               
               // Store the result in localStorage
               localStorage.setItem(`research_${researchId}`, JSON.stringify(newItem));
               
-              setSelectedItem(newItem);
-              setIsLoading(false);
+              // Update state with a slight delay to ensure React has time to process
+              setTimeout(() => {
+                setSelectedItem(newItem);
+                setIsLoading(false);
+                
+                // Show success toast
+                toast({
+                  title: "Research Complete",
+                  description: "Your research has been completed successfully.",
+                });
+              }, 100);
             } else if (result.status === 'error') {
+              console.error('Research failed:', result.message);
+              
+              // Clear intervals immediately
               clearInterval(pollInterval);
               clearTimeout(pollTimeout);
-              console.error('Research failed:', result.message);
-              setIsLoading(false);
               
-              // Show a toast notification
-              toast({
-                title: "Research Error",
-                description: "There was an error processing your research. Please try again.",
-                variant: "destructive"
-              });
+              // Update state with a slight delay
+              setTimeout(() => {
+                setIsLoading(false);
+                
+                // Show error toast
+                toast({
+                  title: "Research Error",
+                  description: "There was an error processing your research. Please try again.",
+                  variant: "destructive"
+                });
+              }, 100);
             } else {
               console.log(`Research still in progress: ${result.status}`);
             }
-            // If still processing, continue polling
             
           } catch (error) {
             console.error('Error polling research results:', error);
+            
+            // Clear intervals immediately
             clearInterval(pollInterval);
             clearTimeout(pollTimeout);
-            setIsLoading(false);
             
-            // Show a toast notification
-            toast({
-              title: "Connection Error",
-              description: "There was an error connecting to the research service. Please try again.",
-              variant: "destructive"
-            });
+            // Update state with a slight delay
+            setTimeout(() => {
+              setIsLoading(false);
+              
+              // Show error toast
+              toast({
+                title: "Connection Error",
+                description: "There was an error connecting to the research service. Please try again.",
+                variant: "destructive"
+              });
+            }, 100);
           }
         }, 3000); // Poll every 3 seconds
       } catch (error) {
@@ -317,13 +381,13 @@ const ChatDemo = () => {
     
     // Return cleanup function
     return () => {
+      console.log('Cleaning up polling for research:', researchId);
       if (pollInterval) {
         clearInterval(pollInterval);
       }
       if (pollTimeout) {
         clearTimeout(pollTimeout);
       }
-      // Don't set isLoading to false here, as it might interfere with new polling
     };
   };
   
