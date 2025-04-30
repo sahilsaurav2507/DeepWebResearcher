@@ -304,7 +304,8 @@ This graph structure:
 
 The system provides a Gradio-based web interface that allows users to:
 1. Enter a research query
-![Screenshot_2025-04-26_170229 2](https://github.com/user-attachments/assets/5fe3130d-222e-43db-9e42-754950d90a83)
+![Screenshot 2025-04-30 232359](https://github.com/user-attachments/assets/b4735638-62e3-4e1a-be5f-55f88d67f932)
+![Screenshot 2025-04-30 232430](https://github.com/user-attachments/assets/c44ca083-dbff-47e1-adf0-4414f890d0c8)
 
 3. Select a content style (Blog post, Detailed report, or Executive summary)
 4. View the research results in multiple tabs:
@@ -313,7 +314,7 @@ The system provides a Gradio-based web interface that allows users to:
    - Research work (Final Content)
    - Drafted information (References)
 
-![Screenshot_2025-04-26_170336 2](https://github.com/user-attachments/assets/fac96320-ac65-468c-98b9-7b3384d45d05)
+![Screenshot 2025-04-30 232442](https://github.com/user-attachments/assets/20f6253c-e6aa-4915-a81c-01e098890f05)
 
 ## Output Formats
 
@@ -362,9 +363,10 @@ The system requires the following API keys:
 - `TAVILY_API_KEY`: For web search capabilities
 
 ### Running the Application
-Run the Gradio interface:
+Run the Frontend interface:
 ```bash
-python gradio_interface.py
+Refer to DeepWebResearch-Frontend
+npm run dev
 ```
 
 The web interface will be available at http://127.0.0.1:7860 by default.
