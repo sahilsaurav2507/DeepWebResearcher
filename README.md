@@ -13,6 +13,13 @@ This project addresses the need for an AI agent-based Deep Research system that:
 3. Utilizes LangGraph & LangChain frameworks to effectively organize the gathered information
 4. Produces well-structured, verified research content
 
+
+
+
+## Demo Video
+
+https://youtu.be/wk88I_4_1JM
+
 ## Overview
 
 DeepWebResearcher helps users conduct deep research on any topic through a coordinated multi-agent system that:
@@ -337,6 +344,10 @@ A polished document in the user's chosen style:
 3. **Executive Summary**: Concise overview highlighting key findings and strategic implications
 
 ## Setup and Usage
+
+Refer to the frontend README file to run the frontend.
+
+**Note:** Ensure the backend server is running before starting the frontend.
 
 ### Installing Dependencies
 
